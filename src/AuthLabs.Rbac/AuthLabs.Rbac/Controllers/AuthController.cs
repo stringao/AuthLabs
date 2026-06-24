@@ -32,17 +32,16 @@ namespace AuthLabs.Rbac.Controllers;
 public class AuthController : ControllerBase
 {
     private readonly IRoleService _roleService;
+    private readonly IAuthenticationService _authService;
 
     // JUNIOR: SignInManager é fornecido pelo Identity e gerencia:
     // - PasswordSignInAsync: verifica email + senha
     // - SignOutAsync: invalida o cookie
     // - IsSignedIn: verifica se o usuário atual está logado
-    private readonly SignInManager<Shared.Models.User> _signInManager;
-
-    public AuthController(IRoleService roleService, SignInManager<Shared.Models.User> signInManager)
+    public AuthController(IRoleService roleService, IAuthenticationService authService)
     {
         _roleService = roleService;
-        _signInManager = signInManager;
+        _authService = authService;
     }
 
     /// <summary>
@@ -67,7 +66,7 @@ public class AuthController : ControllerBase
         // Parâmetros:
         // - isPersistent: true = cookie dura 24h, false = cookie expira ao fechar browser
         // - lockoutOnFailure: true = bloqueia usuário após falhas (desativado aqui)
-        var result = await _signInManager.PasswordSignInAsync(
+        var result = await _authService.PasswordSignInAsync(
             user,
             request.Password,
             isPersistent: true,
@@ -99,7 +98,7 @@ public class AuthController : ControllerBase
     public async Task<IActionResult> Logout()
     {
         // JUNIOR: SignOutAsync invalida o cookie - próximo request não terá autenticação
-        await _signInManager.SignOutAsync();
+        await _authService.SignOutAsync();
         return Ok(new { message = "Logout realizado com sucesso" });
     }
 

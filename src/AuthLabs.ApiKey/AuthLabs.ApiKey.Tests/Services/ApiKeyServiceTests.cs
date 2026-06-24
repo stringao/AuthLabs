@@ -200,4 +200,59 @@ public class ApiKeyServiceTests : IDisposable
         // Assert
         Assert.Null(result);
     }
+
+    [Fact]
+    public async Task ValidateApiKeyAsync_WithNullKey_ReturnsAppropriateResponse()
+    {
+        // Act
+        var result = await _service.ValidateApiKeyAsync(null!);
+
+        // Assert
+        Assert.Null(result);
+    }
+
+    [Fact]
+    public async Task ValidateApiKeyAsync_WithEmptyKey_ReturnsAppropriateResponse()
+    {
+        // Act
+        var resultNull = await _service.ValidateApiKeyAsync(null!);
+        var resultEmpty = await _service.ValidateApiKeyAsync("");
+        var resultWhitespace = await _service.ValidateApiKeyAsync("   ");
+
+        // Assert
+        Assert.Null(resultNull);
+        Assert.Null(resultEmpty);
+        Assert.Null(resultWhitespace);
+    }
+
+    [Fact]
+    public async Task GetApiKeyInfoAsync_WithNullKey_ReturnsAppropriateResponse()
+    {
+        // Act
+        var resultNull = await _service.GetApiKeyInfoAsync(null!);
+        var resultEmpty = await _service.GetApiKeyInfoAsync("");
+        var resultWhitespace = await _service.GetApiKeyInfoAsync("   ");
+
+        // Assert
+        Assert.Null(resultNull);
+        Assert.Null(resultEmpty);
+        Assert.Null(resultWhitespace);
+    }
+
+    [Fact]
+    public void ComputeHash_IsDeterministic()
+    {
+        // Arrange
+        var input = "deterministic-key-test-12345";
+
+        // Act
+        var hash1 = ApiKeyService.ComputeHash(input);
+        var hash2 = ApiKeyService.ComputeHash(input);
+        var hash3 = ApiKeyService.ComputeHash(input);
+
+        // Assert - same input must produce same output every time
+        Assert.Equal(hash1, hash2);
+        Assert.Equal(hash2, hash3);
+        Assert.Equal(hash1, hash3);
+    }
 }

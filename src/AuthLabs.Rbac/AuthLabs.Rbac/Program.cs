@@ -113,6 +113,7 @@ builder.Services.AddAuthorization();
 // JUNIOR: Scoped significa que uma nova instância é criada por REQUEST HTTP
 // Isso é bom para serviços que guardam estado do usuário atual
 builder.Services.AddScoped<IRoleService, RoleService>();
+builder.Services.AddScoped<IAuthenticationService, AuthenticationService>();
 
 var app = builder.Build();
 

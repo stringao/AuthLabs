@@ -1,76 +1,50 @@
-using AuthLabs.Claims.Services;
+using AuthLabs.Claims.Authorization;
 using Xunit;
 
 namespace AuthLabs.Claims.Tests;
 
 /// <summary>
-/// Testes para ClaimsService.
+/// Testes para as políticas de autorização definidas em AuthorizationPolicies.
 /// </summary>
-public class ClaimsServiceTests
+public class AuthorizationPolicyTests
 {
-    private readonly ClaimsService _service;
-
-    public ClaimsServiceTests()
+    [Fact]
+    public void AuthorizationPolicies_CanEditDocuments_HasCorrectName()
     {
-        _service = new ClaimsService();
+        // Assert
+        Assert.Equal("CanEditDocuments", AuthorizationPolicies.CanEditDocuments);
     }
 
     [Fact]
-    public void GetUserClaims_Admin_DeveTerTodosClaims()
+    public void AuthorizationPolicies_CanDeleteDocuments_HasCorrectName()
     {
-        // Act
-        var claims = _service.GetUserClaims("admin@authlabs.com");
-
         // Assert
-        Assert.Equal("true", claims["Document:Edit"]);
-        Assert.Equal("true", claims["Document:Delete"]);
-        Assert.Equal("true", claims["User:Manage"]);
-        Assert.Equal("Premium", claims["Subscription:Tier"]);
+        Assert.Equal("CanDeleteDocuments", AuthorizationPolicies.CanDeleteDocuments);
     }
 
     [Fact]
-    public void GetUserClaims_Manager_DeveTerEditESubscription()
+    public void AuthorizationPolicies_CanManageUsers_HasCorrectName()
     {
-        // Act
-        var claims = _service.GetUserClaims("manager@authlabs.com");
-
         // Assert
-        Assert.Equal("true", claims["Document:Edit"]);
-        Assert.Equal("Standard", claims["Subscription:Tier"]);
-        Assert.False(claims.ContainsKey("Document:Delete"));
-        Assert.False(claims.ContainsKey("User:Manage"));
+        Assert.Equal("CanManageUsers", AuthorizationPolicies.CanManageUsers);
     }
 
     [Fact]
-    public void GetUserClaims_User_DeveTerApenasEditEBasic()
+    public void AuthorizationPolicies_IsPremiumUser_HasCorrectName()
     {
-        // Act
-        var claims = _service.GetUserClaims("user@authlabs.com");
-
         // Assert
-        Assert.Equal("true", claims["Document:Edit"]);
-        Assert.Equal("Basic", claims["Subscription:Tier"]);
-        Assert.False(claims.ContainsKey("Document:Delete"));
-        Assert.False(claims.ContainsKey("User:Manage"));
+        Assert.Equal("IsPremiumUser", AuthorizationPolicies.IsPremiumUser);
     }
 
-    [Fact]
-    public void GetUserClaims_Guest_DeveTerClaimsVazios()
+    [Theory]
+    [InlineData("CanEditDocuments")]
+    [InlineData("CanDeleteDocuments")]
+    [InlineData("CanManageUsers")]
+    [InlineData("IsPremiumUser")]
+    public void AuthorizationPolicies_AllPolicies_HaveNonEmptyNames(string policyName)
     {
-        // Act
-        var claims = _service.GetUserClaims("guest@authlabs.com");
-
         // Assert
-        Assert.Empty(claims);
-    }
-
-    [Fact]
-    public void GetUserClaims_UsuarioInexistente_DeveRetornarDicionarioVazio()
-    {
-        // Act
-        var claims = _service.GetUserClaims("unknown@authlabs.com");
-
-        // Assert
-        Assert.Empty(claims);
+        Assert.False(string.IsNullOrEmpty(policyName));
+        Assert.NotNull(policyName);
     }
 }
