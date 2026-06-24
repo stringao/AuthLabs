@@ -3,7 +3,6 @@ using AuthLabs.ApiKey.Models;
 using AuthLabs.ApiKey.Middleware;
 using AuthLabs.ApiKey.Services;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.OpenApi.Models;
 
 // API Keys de demonstracao (plain text - mostrar ao usuario, nunca armazenar)
 var demoApiKeys = new Dictionary<string, (string ClientName, string[] Scopes, string Role)>
@@ -27,35 +26,6 @@ builder.Services.AddScoped<IApiKeyService, ApiKeyService>();
 
 // Adiciona controllers
 builder.Services.AddControllers();
-
-// Configura Swagger
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen(c =>
-{
-    c.SwaggerDoc("v1", new OpenApiInfo { Title = "AuthLabs API Key", Version = "v1" });
-    c.AddSecurityDefinition("ApiKey", new OpenApiSecurityScheme
-    {
-        Description = "API Key authentication using the X-Api-Key header",
-        Name = "X-Api-Key",
-        In = ParameterLocation.Header,
-        Type = SecuritySchemeType.ApiKey,
-        Scheme = "ApiKeyScheme"
-    });
-    c.AddSecurityRequirement(new OpenApiSecurityRequirement
-    {
-        {
-            new OpenApiSecurityScheme
-            {
-                Reference = new OpenApiReference
-                {
-                    Type = ReferenceType.SecurityScheme,
-                    Id = "ApiKey"
-                }
-            },
-            Array.Empty<string>()
-        }
-    });
-});
 
 // Health checks
 builder.Services.AddHealthChecks();
@@ -96,13 +66,6 @@ using (var scope = app.Services.CreateScope())
         }
         Console.WriteLine("================================");
     }
-}
-
-// Configura pipeline
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
-    app.UseSwaggerUI();
 }
 
 // Health check endpoint (skip auth)

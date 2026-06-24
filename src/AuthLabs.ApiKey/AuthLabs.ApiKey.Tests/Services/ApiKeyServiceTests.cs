@@ -1,7 +1,8 @@
 using AuthLabs.ApiKey.Data;
-using AuthLabs.ApiKey.Models;
 using AuthLabs.ApiKey.Services;
 using Microsoft.EntityFrameworkCore;
+using ApiKeyModel = AuthLabs.ApiKey.Models.ApiKey;
+using ApiKeyScopeModel = AuthLabs.ApiKey.Models.ApiKeyScope;
 
 namespace AuthLabs.ApiKey.Tests.Services;
 
@@ -31,14 +32,14 @@ public class ApiKeyServiceTests : IDisposable
         // Arrange
         var plainKey = "test-api-key-12345";
         var hash = ApiKeyService.ComputeHash(plainKey);
-        var apiKey = new ApiKey
+        var apiKey = new ApiKeyModel
         {
             Key = hash,
             ClientName = "test-client",
             Role = "User",
             IsActive = true,
             ExpiresAt = DateTime.UtcNow.AddYears(1),
-            Scopes = new List<ApiKeyScope>
+            Scopes = new List<ApiKeyScopeModel>
             {
                 new() { Scope = "read" },
                 new() { Scope = "write" }
@@ -70,14 +71,14 @@ public class ApiKeyServiceTests : IDisposable
         // Arrange
         var plainKey = "expired-key-12345";
         var hash = ApiKeyService.ComputeHash(plainKey);
-        var apiKey = new ApiKey
+        var apiKey = new ApiKeyModel
         {
             Key = hash,
             ClientName = "expired-client",
             Role = "User",
             IsActive = true,
             ExpiresAt = DateTime.UtcNow.AddDays(-1), // Expirada
-            Scopes = new List<ApiKeyScope>()
+            Scopes = new List<ApiKeyScopeModel>()
         };
         _context.ApiKeys.Add(apiKey);
         await _context.SaveChangesAsync();
@@ -95,14 +96,14 @@ public class ApiKeyServiceTests : IDisposable
         // Arrange
         var plainKey = "inactive-key-12345";
         var hash = ApiKeyService.ComputeHash(plainKey);
-        var apiKey = new ApiKey
+        var apiKey = new ApiKeyModel
         {
             Key = hash,
             ClientName = "inactive-client",
             Role = "User",
             IsActive = false, // Inativa
             ExpiresAt = DateTime.UtcNow.AddYears(1),
-            Scopes = new List<ApiKeyScope>()
+            Scopes = new List<ApiKeyScopeModel>()
         };
         _context.ApiKeys.Add(apiKey);
         await _context.SaveChangesAsync();
@@ -120,14 +121,14 @@ public class ApiKeyServiceTests : IDisposable
         // Arrange
         var plainKey = "info-test-key-12345";
         var hash = ApiKeyService.ComputeHash(plainKey);
-        var apiKey = new ApiKey
+        var apiKey = new ApiKeyModel
         {
             Key = hash,
             ClientName = "info-client",
             Role = "Admin",
             IsActive = true,
             ExpiresAt = DateTime.UtcNow.AddYears(1),
-            Scopes = new List<ApiKeyScope>
+            Scopes = new List<ApiKeyScopeModel>
             {
                 new() { Scope = "read" },
                 new() { Scope = "write" },
@@ -181,14 +182,14 @@ public class ApiKeyServiceTests : IDisposable
     {
         // Arrange - mesmo hash diferente de key diferente
         var hash = ApiKeyService.ComputeHash("key-1");
-        var apiKey = new ApiKey
+        var apiKey = new ApiKeyModel
         {
             Key = hash,
             ClientName = "hash-test",
             Role = "User",
             IsActive = true,
             ExpiresAt = DateTime.UtcNow.AddYears(1),
-            Scopes = new List<ApiKeyScope>()
+            Scopes = new List<ApiKeyScopeModel>()
         };
         _context.ApiKeys.Add(apiKey);
         await _context.SaveChangesAsync();
