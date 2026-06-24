@@ -1,15 +1,124 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
+  <!--
+    JUNIOR: Este é um projeto do tipo Class Library (.NET). Ele não é um aplicativo executável,
+    mas sim um conjunto de classes que podem ser reutilizadas por outros projetos.
+
+    Pense nele como uma "caixa de ferramentas" que outros projetos de autenticação
+    podem referenciar para ter acesso a modelos e configurações compartilhadas.
+  -->
   <PropertyGroup>
+    <!--
+      JUNIOR: TargetFramework define qual versão do .NET será usada.
+      net10.0 é a versão mais recente (equivalente ao .NET 10).
+      Isso significa que este projeto requer o SDK do .NET 10 instalado.
+    -->
     <TargetFramework>net10.0</TargetFramework>
+
+    <!--
+      JUNIOR: ImplicitUsings habilita "usings implícitos".
+      Isso significa que o compilador adiciona automaticamente vários using statements
+      comuns (como System, System.Collections.Generic, etc.) em todos os arquivos.
+      É como ter um "global using" automático - facilita escrever código mais limpo.
+    -->
     <ImplicitUsings>enable</ImplicitUsings>
+
+    <!--
+      JUNIOR: Nullable habilita verificação de nulos do C#.
+      Com isso, o compilador avisa quando uma variável pode ser nula e você não tratou isso.
+      Ajuda a prevenir bugs clássicos de NullReferenceException!
+    -->
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
+  <!--
+    JUNIOR: PackageReferences são as dependências externas (NuGet packages).
+    NuGet é o gerenciador de pacotes do .NET - você pode pensar nele como
+    o "npm do JavaScript" ou "pip do Python".
+
+    Cada PackageReference inclui:
+    - Nome do pacote (quem criou/mantém)
+    - Versão específica (sempre use versões fixas em produção!)
+  -->
   <ItemGroup>
+    <!--
+      JUNIOR: Microsoft.AspNetCore.Identity.EntityFrameworkCore
+      =========================================================================
+      Este é o sistema de autenticação/autorização do ASP.NET Core integrado ao EF Core.
+
+      O que ele fornece:
+      - UserManager<TUser>: gerencia usuários (criar, atualizar, deletar, buscar)
+      - SignInManager<TUser>: gerencia login/logout
+      - Roles e Claims: sistema de permissões granulares
+      - Já vem com tudo pronto para usar com IdentityDbContext
+
+      Por que usamos ele em vez de criar do zero?
+      - Segurança validada por anos de uso em produção pela Microsoft
+      - Já implementa hash de senhas com bcrypt (seguro!)
+      - Já tem proteção contra brute force, enumeration, etc.
+
+      A dependência ".EntityFrameworkCore" significa que ele funciona
+      diretamente com Entity Framework Core - nosso ORM escolhido.
+    -->
     <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="10.0.0" />
+
+    <!--
+      JUNIOR: Microsoft.EntityFrameworkCore
+      =========================================================================
+      Entity Framework Core é um ORM (Object-Relational Mapper).
+
+      O que é um ORM? É uma ferramenta que converte:
+      - Classes C# <-> Tabelas SQL
+      - Objetos C# <-> Linhas do banco de dados
+
+      Benefícios do EF Core:
+      - Você escreve código C# em vez de SQL na maioria dos casos
+      - O banco de dados fica "portátil" (troca PostgreSQL por SQL Server mudando só config)
+      - Migrations: versiona mudanças no banco como código
+
+      Este é o pacote "core" - sem ele nada do EF funciona.
+    -->
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="10.0.0" />
+
+    <!--
+      JUNIOR: Microsoft.EntityFrameworkCore.InMemory
+      =========================================================================
+      Este é um provider do EF Core que SIMULA um banco de dados na memória RAM.
+
+      Para que serve? PRINCIPALMENTE PARA TESTES!
+
+      Vantagens para testes:
+      - Não precisa de um banco PostgreSQL rodando para rodar testes
+      - Cada teste pode ter seu próprio banco "vazio" e isolado
+      - Testes ficam mais rápidos (memória RAM é mais rápida que disco)
+      - Testes podem rodar em qualquer máquina sem configuração
+
+      IMPORTANTE: Este provider é SÓ para testes. Em produção usamos
+      PostgreSQL (Npgsql) porque banco em memória não persiste dados
+      e não escala para múltiplas instâncias do aplicativo.
+    -->
     <PackageReference Include="Microsoft.EntityFrameworkCore.InMemory" Version="10.0.0" />
+
+    <!--
+      JUNIOR: Npgsql.EntityFrameworkCore.PostgreSQL
+      =========================================================================
+      Npgsql é o driver que permite ao EF Core se comunicar com PostgreSQL.
+
+      PostgreSQL é um banco de dados relacional robusto e gratuito.
+
+      Por que PostgreSQL e não SQL Server ou MySQL?
+      - É open source e gratuito (não tem custo de licença)
+      - Suporta JSON nativo, Full Text Search, arrays
+      - Excelente para aplicações que precisam escalar
+      - Muy utilizado em aplicações modernas e microsserviços
+
+      Este pacote "traduz" as operações do EF Core para comandos que
+      o PostgreSQL entende, e vice-versa.
+
+      JUNIOR TIP: Se você vir erros de "NpgsqlException" em runtime,
+      geralmente significa que a connection string está errada ou o banco
+      PostgreSQL não está acessível.
+    -->
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.0" />
   </ItemGroup>
 
