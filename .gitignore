@@ -1,0 +1,23 @@
+# Build results
+[Bb]in/
+[Oo]bj/
+[Ll]og/
+[Ll]ocal/
+
+# Visual Studio
+.vs/
+*.user
+*.suo
+
+# JetBrains Rider
+.idea/
+
+# NuGet
+packages/
+*.nupkg
+
+# .NET
+*.dll
+*.exe
+*.pdb
+*.cache

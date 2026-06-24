@@ -1,0 +1,9 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/AuthLabs.Shared/AuthLabs.Shared.csproj" />
+  </Folder>
+  <Folder Name="/src/AuthLabs.Jwt/">
+    <Project Path="src/AuthLabs.Jwt/AuthLabs.Jwt.Tests/AuthLabs.Jwt.Tests.csproj" />
+    <Project Path="src/AuthLabs.Jwt/AuthLabs.Jwt/AuthLabs.Jwt.csproj" />
+  </Folder>
+</Solution>
