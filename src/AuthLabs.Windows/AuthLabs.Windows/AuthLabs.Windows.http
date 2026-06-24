@@ -1,0 +1,6 @@
+@AuthLabs.Windows_HostAddress = http://localhost:5042
+
+GET {{AuthLabs.Windows_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

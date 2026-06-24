@@ -22,4 +22,16 @@
     <Project Path="src/AuthLabs.Rbac/AuthLabs.Rbac.Tests/AuthLabs.Rbac.Tests.csproj" />
     <Project Path="src/AuthLabs.Rbac/AuthLabs.Rbac/AuthLabs.Rbac.csproj" />
   </Folder>
+  <Folder Name="/src/AuthLabs.OAuth/">
+    <Project Path="src/AuthLabs.OAuth/AuthLabs.OAuth.Tests/AuthLabs.OAuth.Tests.csproj" />
+    <Project Path="src/AuthLabs.OAuth/AuthLabs.OAuth/AuthLabs.OAuth.csproj" />
+  </Folder>
+  <Folder Name="/src/AuthLabs.Windows/">
+    <Project Path="src/AuthLabs.Windows/AuthLabs.Windows.Tests/AuthLabs.Windows.Tests.csproj" />
+    <Project Path="src/AuthLabs.Windows/AuthLabs.Windows/AuthLabs.Windows.csproj" />
+  </Folder>
+  <Folder Name="/src/AuthLabs.Resource/">
+    <Project Path="src/AuthLabs.Resource/AuthLabs.Resource.Tests/AuthLabs.Resource.Tests.csproj" />
+    <Project Path="src/AuthLabs.Resource/AuthLabs.Resource.csproj" />
+  </Folder>
 </Solution>
