@@ -32,6 +32,6 @@
   </Folder>
   <Folder Name="/src/AuthLabs.Resource/">
     <Project Path="src/AuthLabs.Resource/AuthLabs.Resource.Tests/AuthLabs.Resource.Tests.csproj" />
-    <Project Path="src/AuthLabs.Resource/AuthLabs.Resource.csproj" />
+    <Project Path="src/AuthLabs.Resource/AuthLabs.Resource/AuthLabs.Resource.csproj" />
   </Folder>
 </Solution>
