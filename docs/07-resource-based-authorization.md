@@ -1,79 +1,176 @@
 # Resource-Based Authorization
 
-## O que é
+## O que e
 
-Resource-based Authorization é um modelo onde as permissões são avaliadas não apenas baseada em quem o usuário é (roles/claims), mas também baseada no recurso específico que está sendo acessado. O sistema verifica se o usuário tem permissão para executar uma operação específica naquele recurso específico.
+Resource-based Authorization e um modelo onde as permissoes sao avaliadas nao apenas baseada em quem o usuario e (roles/claims), mas tambem baseada no recurso especifico que esta sendo acessado. O sistema verifica se o usuario tem permissao para executar uma operacao especifica naquele recurso especifico.
+
+Diferente de RBAC onde verificamos "e Admin?", aqui verificamos "este usuario pode editar ESTE documento especifico?".
+
+## Conceitos Fundamentais
+
+### Resource vs Identity
+
+| Tipo | Exemplo | Questao |
+|------|---------|---------|
+| Identity | Role, Claim | "O usuario e Admin?" |
+| Resource | Document, Order | "O usuario pode editar este documento?" |
+
+### Quando Resource-Based e Necessario
+
+- Documento 1: Dono e User A, Editor e User B
+- Documento 2: Dono e User B, Editor e User A
+- SAME USER, DIFFERENT PERMISSIONS per document!
 
 ## Como funciona
 
-1. **Resource Identification**: Recurso é identificado pelo seu ID (ex: documento com ID=123)
+1. **Resource Identification**: Recurso e identificado pelo seu ID (ex: documento com ID=123)
 2. **Resource Loading**: Sistema carrega o recurso do banco de dados
-3. **Authorization Handler**: Handler avalia se o principal pode executar a operação
-4. **Ownership Check**: Comum verificar se o usuário é o dono do recurso
-5. **Permission Check**: Sistema verifica se há permissões explícitas para o usuário no recurso
-6. **Decision**: Acesso concedido ou negado baseado na avaliação
+3. **Authorization Handler**: Handler avalia se o principal pode executar a operacao
+4. **Ownership Check**: Comum verificar se o usuario e o dono do recurso
+5. **Permission Check**: Sistema verifica se ha permissoes explicitas para o usuario no recurso
+6. **Decision**: Acesso concedido ou negado baseado na avaliacao
 
 ## Diagrama de fluxo
+
 ```
-┌────────┐     ┌──────────────┐     ┌─────────┐
-│ Client │────►│   Server     │────►│   DB    │
-└────────┘     └──────────────┘     └─────────┘
-     │               │                  │
-     │  1. Request   │                  │
-     │  DELETE /docs/42                 │
-     │─────────────►│                  │
-     │               │                  │
-     │  2. Load Doc  │                  │
-     │  (id=42)     │                  │
-     │─────────────►│                  │
-     │               │◄────────────────│
-     │               │                  │
-     │  3. Check     │                  │
-     │  - Owner?     │                  │
-     │  - Permissions?                 │
-     │               │                  │
-     │  4. Evaluate  │                  │
-     │  Handler      │                  │
-     │               │                  │
-     │  5. Decision  │                  │
-     │  (Allow/Deny) │                  │
-     │               │                  │
-     │  6. Response  │                  │
-     │◄─────────────│                  │
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                     RESOURCE-BASED AUTHORIZATION FLOW                       │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+    CLIENT                         SERVER                          DATABASE
+    ──────                         ──────                          ────────
+       │                              │                               │
+       │  1. PUT /documents/42        │                               │
+       │     Authorization: Bearer     │                               │
+       │     {title: "New Title"}    │                               │
+       │───────────────────────────►│                               │
+       │                              │                               │
+       │                              │  2. Extract resource ID       │
+       │                              │     from route: 42           │
+       │                              │                               │
+       │                              │  3. Load Document(id=42)     │
+       │                              │──────────────────────────────►│
+       │                              │                               │
+       │                              │  4. SELECT * FROM documents   │
+       │                              │     JOIN permissions ON ...   │
+       │                              │     WHERE id = 42             │
+       │                              │◄──────────────────────────────│
+       │                              │                               │
+       │                              │  5. Document found:           │
+       │                              │     - OwnerId = 1 (Alice)     │
+       │                              │     - Permissions:           │
+       │                              │       Bob: CanEdit=true      │
+       │                              │       Carol: CanEdit=false   │
+       │                              │                               │
+       │                              │  6. AuthorizationService     │
+       │                              │     .AuthorizeAsync(         │
+       │                              │       User,                  │
+       │                              │       document,              │
+       │                              │       operation              │
+       │                              │     )                        │
+       │                              │                               │
+       │                              │  7. DocumentAuthorization     │
+       │                              │     .HandleRequirementAsync  │
+       │                              │                               │
+       │                              │  8. CHECK OWNERSHIP:         │
+       │                              │     currentUser.Id == 1?     │
+       │                              │     YES → ALLOW (owner)      │
+       │                              │     NO → check permissions   │
+       │                              │                               │
+       │                              │  9. CHECK PERMISSIONS:       │
+       │                              │     currentUser.Id == 2?     │
+       │                              │     Bob has CanEdit=true     │
+       │                              │     YES → ALLOW              │
+       │                              │     NO → DENY                │
+       │                              │                               │
+       │  10. 200 OK / 403 Forbidden │                               │
+       │◄───────────────────────────│                               │
+
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                        OWNER vs PERMISSION FLOW                              │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│  SCENARIO 1: Owner accessing their document                                  │
+│  ───────────────────────────────────────────────────                         │
+│                                                                              │
+│  User: Alice (id=1)                                                         │
+│  Document: 42 (OwnerId=1)                                                   │
+│                                                                              │
+│  Handler: Is resource.OwnerId == currentUser.Id?                           │
+│  1 == 1 → TRUE                                                              │
+│  context.Succeed(requirement)  ← Early return, skip permission check       │
+│                                                                              │
+│  ─────────────────────────────────────────────────────────────────────────  │
+│                                                                              │
+│  SCENARIO 2: Non-owner with explicit permission                             │
+│  ───────────────────────────────────────────────────                         │
+│                                                                              │
+│  User: Bob (id=2)                                                           │
+│  Document: 42 (OwnerId=1, Alice)                                            │
+│  Permissions: Bob: CanEdit=true                                             │
+│                                                                              │
+│  Handler: Is resource.OwnerId == currentUser.Id?                           │
+│  1 == 2 → FALSE → continue to permission check                              │
+│                                                                              │
+│  Handler: permission = permissions.find(userId=2)                          │
+│  permission.CanEdit == true? → TRUE                                        │
+│  context.Succeed(requirement)                                               │
+│                                                                              │
+│  ─────────────────────────────────────────────────────────────────────────  │
+│                                                                              │
+│  SCENARIO 3: Non-owner without permission                                   │
+│  ───────────────────────────────────────────────────                         │
+│                                                                              │
+│  User: Carol (id=3)                                                         │
+│  Document: 42 (OwnerId=1, Alice)                                            │
+│  Permissions: Bob: CanEdit=true  (Carol not listed)                        │
+│                                                                              │
+│  Handler: Is resource.OwnerId == currentUser.Id?                           │
+│  1 == 3 → FALSE → continue to permission check                              │
+│                                                                              │
+│  Handler: permission = permissions.find(userId=3)                          │
+│  permission == null → return (no success)                                  │
+│                                                                              │
+│  403 Forbidden                                                              │
+│                                                                              │
+└─────────────────────────────────────────────────────────────────────────────┘
 ```
 
 ## Quando usar
 
-- Sistemas de documentos/arquivos onde usuários têm permissões diferentes por documento
-- Aplicações multi-tenant onde dados devem ser isolados por organização
-- Workflows de aprovação onde aprovadores têm acesso granular
-- Sistemas de content management (CMS) com permissões por item
-- Dashboards customizáveis onde usuários criam seus próprios recursos
+- Sistemas de documentos/arquivos onde usuarios tem permissoes diferentes por documento
+- Aplicacoes multi-tenant onde dados devem ser isolados por organizacao
+- Workflows de aprovacao onde aprovadores tem acesso granular
+- Sistemas de content management (CMS) com permissoes por item
+- Dashboards customizaveis onde usuarios criam seus proprios recursos
+- Qualquer cenario onde a mesma operacao pode ser permitida ou negada baseado no recurso especifico
 
-## Quando NÃO usar
+## Quando NAO usar
 
-- Quando todas as operações são uniformes para todos os recursos (use RBAC)
-- Sistemas com milhões de recursos (performance de authorization queries)
-- Cenários onde ownership é suficiente (simples owner = full access)
-- Quando resources são imutáveis e não requerem permissões customizadas
+- Quando todas as operacoes sao uniformes para todos os recursos (use RBAC)
+- Sistemas com milhoes de recursos (performance de authorization queries)
+- Cenarios onde ownership e suficiente (simples owner = full access)
+- Quando resources sao imutaveis e nao requerem permissoes customizadas
+- Aplicacoes simples onde apenas roles sao suficientes
 
 ## Alertas e caveats importantes
 
-1. **Controlador de documentos não implementado**: Authorization handlers existem mas não há API para testar.
+1. **Controlador de documentos nao implementado**: Authorization handlers existem mas nao ha API para testar.
 
-2. **Operação de Read não implementada**: Handler só verifica Edit e Delete, não Read.
+2. **Operacao de Read nao implementada**: Handler só verifica Edit e Delete, nao Read.
 
-3. **Possível null reference**: Handler não verifica se `permission` é null antes de acessar propriedades.
+3. **Possivel null reference**: Handler nao verifica se `permission` e null antes de acessar propriedades.
 
-4. **Login sem validação de senha**: Endpoint de login não valida senha - apenas verifica se usuário existe.
+4. **Login sem validacao de senha**: Endpoint de login nao valida senha - apenas verifica se usuario existe.
 
-5. **Middleware de autorização não configurado**: Handlers podem não estar wireados corretamente no Program.cs.
+5. **Middleware de autorizacao nao configurado**: Handlers podem nao estar wireados corretamente no Program.cs.
 
-6. **Sem cache de permissões**: Cada requisição faz query no banco.
+6. **Sem cache de permissoes**: Cada requisicao faz query no banco.
 
-7. **Ausência de audit trail**: Não há logging de quais permissões foram verificadas.
+7. **Ausencia de audit trail**: Nao ha logging de quais permissoes foram verificadas.
 
-## Configuração necessária
+## Configuracao necessaria
 
 ```json
 {
@@ -129,19 +226,25 @@ public class DocumentAuthorizationHandler :
         DocumentOperationRequirement requirement,
         Document resource)
     {
-        // Owner tem todas as permissões
+        if (resource == null)
+        {
+            return Task.CompletedTask;
+        }
+
+        // Owner tem todas as permissoes
         if (resource.OwnerId == context.User.GetUserId())
         {
             context.Succeed(requirement);
             return Task.CompletedTask;
         }
 
-        // Verificar permissões explícitas
+        // Verificar permissoes explicitas
         var permission = resource.Permissions
             .FirstOrDefault(p => p.UserId == context.User.GetUserId());
 
+        // NULL CHECK - importante!
         if (permission == null)
-            return Task.CompletedTask;
+            return Task.CompletedTask;  // Nao succeeded = deny
 
         switch (requirement.Operation)
         {
@@ -153,6 +256,10 @@ public class DocumentAuthorizationHandler :
                 if (permission.CanDelete)
                     context.Succeed(requirement);
                 break;
+            case "Read":
+                // Poderia implementar leitura se tivesse campo
+                context.Succeed(requirement);  // Exemplo: todos podem ler
+                break;
         }
 
         return Task.CompletedTask;
@@ -162,21 +269,21 @@ public class DocumentAuthorizationHandler :
 
 ## Endpoints
 
-**ATENÇÃO**: Este projeto está incompleto - só há AuthController com endpoint de login.
+**ATENCAO**: Este projeto esta incompleto - só há AuthController com endpoint de login.
 
-| Método | Path | Auth | Descrição |
+| Metodo | Path | Auth | Descricao |
 |--------|------|------|-----------|
-| POST | /api/auth/login | Não | Login (JWT) |
+| POST | /api/auth/login | Nao | Login (JWT) |
 
 **Endpoints de documento serão implementados futuramente:**
-| Método | Path | Auth | Descrição |
+| Metodo | Path | Auth | Descricao |
 |--------|------|------|-----------|
 | GET | /api/documents | Sim | Listar documentos |
 | GET | /api/documents/{id} | Sim | Ver documento |
 | PUT | /api/documents/{id} | Sim | Editar (requer CanEdit) |
 | DELETE | /api/documents/{id} | Sim | Deletar (requer CanDelete) |
 
-## Usuários de demonstração
+## Usuarios de demonstracao
 
 | Email | Senha | Role |
 |-------|-------|------|
@@ -204,7 +311,7 @@ curl -X POST http://localhost:5000/api/auth/login \
 }
 ```
 
-### Tentar editar documento próprio
+### Tentar editar documento proprio
 ```bash
 curl -X PUT http://localhost:5000/api/documents/1 \
   -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." \
@@ -213,7 +320,7 @@ curl -X PUT http://localhost:5000/api/documents/1 \
 # Owner do documento -> Sucesso
 ```
 
-### Tentar editar documento de outro usuário (sem permissão)
+### Tentar editar documento de outro usuario (sem permissao)
 ```bash
 curl -X PUT http://localhost:5000/api/documents/2 \
   -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." \
@@ -222,12 +329,86 @@ curl -X PUT http://localhost:5000/api/documents/2 \
 # Retorna: 403 Forbidden
 ```
 
-## Matriz de Permissões
+### Compartilhar documento com outro usuario
+```bash
+# Owner pode compartilhar documento
+curl -X POST http://localhost:5000/api/documents/1/share \
+  -H "Authorization: Bearer <owner_token>" \
+  -H "Content-Type: application/json" \
+  -d '{"userId": "2", "canEdit": true, "canDelete": false}'
+```
 
-| Recurso | Dono | Permissão Edit | Permissão Delete | Others |
+## Matriz de Permissoes
+
+| Recurso | Dono | Permissao Edit | Permissao Delete | Others |
 |---------|------|----------------|------------------|--------|
 | Doc 1 (user@authlabs.com) | user | Sim (owner) | Sim (owner) | Sem acesso |
 | Doc 2 (admin@authlabs.com) | admin | Se concedido | Se concedido | Sem acesso |
+
+## Common Errors
+
+### 1. 403 Forbidden mesmo sendo dono
+
+**Sintoma:** Usuario e dono do documento mas recebe 403.
+
+**Causas:**
+- Handler nao esta registrado no DI
+- Resource nao esta sendo passado para AuthorizeAsync
+- OwnerId e string mas userId e int (type mismatch)
+
+**Solucao:**
+```csharp
+// Verificar registro do handler
+services.AddScoped<IAuthorizationHandler, DocumentAuthorizationHandler>();
+
+// Verificar passagem do resource
+var document = await _context.Documents.FindAsync(id);
+if (document == null) return NotFound();
+
+var result = await _authorizationService.AuthorizeAsync(User, document, requirement);
+
+// Verificar tipos
+// Se OwnerId e string "1" e user.GetUserId() retorna 1 (int)
+```
+
+### 2. NullReferenceException no handler
+
+**Sintoma:** Erro 500 ao acessar documento.
+
+**Causa:** Handler tenta acessar `resource.Permissions` mas Permissions e null (lazy load nao funcionou).
+
+**Solucao:**
+```csharp
+// Include permissions ao carregar documento
+var document = await _context.Documents
+    .Include(d => d.Permissions)
+    .FirstOrDefaultAsync(d => d.Id == id);
+
+// OU verificar null no handler
+var permission = resource.Permissions
+    .FirstOrDefault(p => p.UserId == context.User.GetUserId());
+if (permission == null)
+    return Task.CompletedTask;
+```
+
+### 3. Performance: N+1 queries
+
+**Sintoma:** Carregar lista de documentos e muito lento.
+
+**Causa:** Para cada documento, uma query separada para permissoes.
+
+**Solucao:**
+```csharp
+// Carregar todos de uma vez com Include
+var documents = await _context.Documents
+    .Include(d => d.Permissions)
+    .Where(d => d.OwnerId == userId || 
+                d.Permissions.Any(p => p.UserId == userId))
+    .ToListAsync();
+
+// OU usar cache
+_documentsCache.TryGetValue(userId, out var cached);
+```
 
 ## Policy Registration
 
@@ -264,6 +445,75 @@ public async Task<IActionResult> EditDocument(int id, UpdateDocumentRequest requ
     await _documentService.UpdateAsync(id, request);
     return Ok();
 }
+
+[HttpDelete("{id}")]
+public async Task<IActionResult> DeleteDocument(int id)
+{
+    var document = await _documentService.GetByIdAsync(id);
+    if (document == null)
+        return NotFound();
+
+    var requirement = new DocumentOperationRequirement("Delete");
+    var result = await _authorizationService.AuthorizeAsync(User, document, requirement);
+
+    if (!result.Succeeded)
+        return Forbid();
+
+    await _documentService.DeleteAsync(id);
+    return NoContent();
+}
+```
+
+## Security Considerations
+
+### 1. Always Load Resource from Database
+
+```csharp
+// NUNCA usar dados do request diretamente
+// BAD: var ownerId = request.OwnerId;
+// GOOD: var document = await _context.Documents.FindAsync(id);
+```
+
+### 2. Audit Logging
+
+```csharp
+public class DocumentAuthorizationHandler :
+    AuthorizationHandler<DocumentOperationRequirement, Document>
+{
+    private readonly IAuditLogger _auditLogger;
+
+    protected override Task HandleRequirementAsync(
+        AuthorizationHandlerContext context,
+        DocumentOperationRequirement requirement,
+        Document resource)
+    {
+        var userId = context.User.GetUserId();
+        var allowed = EvaluatePermission(userId, resource, requirement.Operation);
+        
+        _auditLogger.Log(
+            "DocumentAccess",
+            userId,
+            new
+            {
+                DocumentId = resource.Id,
+                Operation = requirement.Operation,
+                Result = allowed ? "ALLOWED" : "DENIED",
+                IsOwner = resource.OwnerId == userId
+            });
+        
+        if (allowed)
+            context.Succeed(requirement);
+            
+        return Task.CompletedTask;
+    }
+}
+```
+
+### 3. Deny by Default
+
+```csharp
+// Se handler nao chama context.Succeed(), acesso e negado
+// Isso e intencional - nega por padrao
 ```
 
 ## Referências
@@ -271,3 +521,4 @@ public async Task<IActionResult> EditDocument(int id, UpdateDocumentRequest requ
 - [Microsoft Docs - Resource-based Authorization](https://docs.microsoft.com/aspnet/core/security/authorization/resourcebased)
 - [Microsoft - Custom Authorization Policies](https://docs.microsoft.com/aspnet/core/security/authorization/policies)
 - [OWASP - Access Control](https://owasp.org/www-project-top-ten/2017/A5_2017-Broken_Access_Control)
+- [NIST ABAC Guide](https://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.8625.pdf)
