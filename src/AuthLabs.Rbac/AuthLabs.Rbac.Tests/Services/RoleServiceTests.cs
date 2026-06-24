@@ -3,6 +3,7 @@ using AuthLabs.Shared.Models;
 using FluentAssertions;
 using Microsoft.AspNetCore.Identity;
 using Moq;
+using Xunit;
 
 namespace AuthLabs.Rbac.Tests.Services;
 
