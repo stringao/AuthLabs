@@ -1,0 +1,6 @@
+@AuthLabs.Cookie_HostAddress = http://localhost:5208
+
+GET {{AuthLabs.Cookie_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

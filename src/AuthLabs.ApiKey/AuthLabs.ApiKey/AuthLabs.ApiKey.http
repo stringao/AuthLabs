@@ -1,0 +1,6 @@
+@AuthLabs.ApiKey_HostAddress = http://localhost:5018
+
+GET {{AuthLabs.ApiKey_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

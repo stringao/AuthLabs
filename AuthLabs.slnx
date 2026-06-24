@@ -2,8 +2,24 @@
   <Folder Name="/src/">
     <Project Path="src/AuthLabs.Shared/AuthLabs.Shared.csproj" />
   </Folder>
+  <Folder Name="/src/AuthLabs.ApiKey/">
+    <Project Path="src/AuthLabs.ApiKey/AuthLabs.ApiKey.Tests/AuthLabs.ApiKey.Tests.csproj" />
+    <Project Path="src/AuthLabs.ApiKey/AuthLabs.ApiKey/AuthLabs.ApiKey.csproj" />
+  </Folder>
+  <Folder Name="/src/AuthLabs.Claims/">
+    <Project Path="src/AuthLabs.Claims/AuthLabs.Claims.Tests/AuthLabs.Claims.Tests.csproj" />
+    <Project Path="src/AuthLabs.Claims/AuthLabs.Claims/AuthLabs.Claims.csproj" />
+  </Folder>
+  <Folder Name="/src/AuthLabs.Cookie/">
+    <Project Path="src/AuthLabs.Cookie/AuthLabs.Cookie.Tests/AuthLabs.Cookie.Tests.csproj" />
+    <Project Path="src/AuthLabs.Cookie/AuthLabs.Cookie/AuthLabs.Cookie.csproj" />
+  </Folder>
   <Folder Name="/src/AuthLabs.Jwt/">
     <Project Path="src/AuthLabs.Jwt/AuthLabs.Jwt.Tests/AuthLabs.Jwt.Tests.csproj" />
     <Project Path="src/AuthLabs.Jwt/AuthLabs.Jwt/AuthLabs.Jwt.csproj" />
+  </Folder>
+  <Folder Name="/src/AuthLabs.Rbac/">
+    <Project Path="src/AuthLabs.Rbac/AuthLabs.Rbac.Tests/AuthLabs.Rbac.Tests.csproj" />
+    <Project Path="src/AuthLabs.Rbac/AuthLabs.Rbac/AuthLabs.Rbac.csproj" />
   </Folder>
 </Solution>
