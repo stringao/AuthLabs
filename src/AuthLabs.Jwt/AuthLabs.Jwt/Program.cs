@@ -19,11 +19,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Adicionar suporte a controllers e API endpoints
 // JUNIOR: AddControllers() registra serviços para handling de requests HTTP.
-// AddEndpointsApiExplorer() permite que o Swagger descubra seus endpoints.
-// AddSwaggerGen() adiciona geração de documentação Swagger.
 builder.Services.AddControllers();
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
 
 // ============================================================================
 // CONFIGURAÇÃO DO BANCO DE DADOS
@@ -153,16 +149,6 @@ var app = builder.Build();
 // JUNIOR: O pipeline é uma SEQUÊNCIA de middleware que processa cada request.
 // Cada middleware pode: processar, modificar, ou rejeitar a request.
 // A ordem IMPORTA - middleware registrado primeiro executa primeiro.
-
-// Só mostrar Swagger na development (não em produção!)
-if (app.Environment.IsDevelopment())
-{
-    // Swagger = documentação interativa da API
-    // JUNIOR: Swagger permite testar endpoints direto no browser.
-    // URL típica: https://localhost:5001/swagger
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
 
 // ATENÇÃO: Ordem importante!
 // 1. UseAuthentication() deve vir ANTES de UseAuthorization()
